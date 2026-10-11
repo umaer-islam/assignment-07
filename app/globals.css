@@ -26,27 +26,22 @@ body {
 }
 
 @keyframes ticker-scroll {
-  from {
-    transform: translateX(0);
+  0% {
+    transform: translate3d(0, 0, 0);
   }
-  to {
-    transform: translateX(-50%);
+  100% {
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
 .ticker-track {
-  animation: ticker-scroll 35s linear infinite;
+  display: flex !important;
+  width: max-content !important;
+  animation: ticker-scroll 40s linear infinite !important;
   will-change: transform;
 }
 
-.ticker-mask:hover .ticker-track {
+.ticker-track:hover {
   animation-play-state: paused;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ticker-track {
-    animation: none;
-    transform: translateX(0);
-    will-change: auto;
-  }
-}

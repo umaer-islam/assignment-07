@@ -61,11 +61,13 @@ export async function generateMetadata({
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api
+    .getSession({
+      headers: await headers(),
+    })
+    .catch(() => null);
 
-  if (!session) {
+  if (!session?.user) {
     redirect(`/signin?callbackUrl=/product/${encodeURIComponent(slug)}`);
   }
 
@@ -160,7 +162,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f9faf9]">
-      <Navbar categories={navbarCategories} />
+      <Navbar categories={navbarCategories} initialSession={session} />
 
       {allProducts.length > 0 && <PriceTicker products={allProducts} />}
 
@@ -239,7 +241,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Right: Today's Price Box */}
-            <div className="rounded-2xl border border-stone-200/60 bg-[#fbfbfb] px-6 py-3.5 text-center shrink-0 min-w-[130px]">
+            <div className="rounded-2xl border border-stone-200/60 bg-[#fbfbfb] px-6 py-3.5 text-center shrink-0 min-w-[130px] w-full sm:w-auto">
               <p className="text-[11px] text-stone-400 font-medium">
                 আজকের দাম
               </p>
@@ -329,7 +331,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {sortedMarkets.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs sm:text-sm">
+                <table className="w-full min-w-[480px] text-left text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b border-stone-200 text-xs font-semibold text-stone-400">
                       <th scope="col" className="pb-3 text-left">বাজার</th>

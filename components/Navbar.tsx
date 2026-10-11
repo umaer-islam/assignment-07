@@ -14,19 +14,35 @@ export interface NavbarCategory {
   icon?: string;
 }
 
+export interface NavbarSessionUser {
+  id?: string;
+  name?: string;
+  email?: string;
+  image?: string | null;
+}
+
+export interface NavbarSession {
+  user: NavbarSessionUser;
+  session?: unknown;
+}
+
 export interface NavbarProps {
   categories?: NavbarCategory[];
+  initialSession?: NavbarSession | null;
 }
 
 const emptySubscribe = () => () => {};
 
 export default function Navbar({
   categories = [],
+  initialSession = null,
 }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { data: session, isPending } = useSession();
+  const { data: clientSession } = useSession();
+  const session = clientSession !== undefined ? clientSession : initialSession;
+  const user = session?.user;
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -80,7 +96,7 @@ export default function Navbar({
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {/* User Session State */}
-            {!isPending && session?.user ? (
+            {user ? (
               <div className="relative">
                 <button
                   type="button"
@@ -88,19 +104,19 @@ export default function Navbar({
                   className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50/80 py-1.5 pl-1.5 pr-3 text-xs sm:text-sm font-semibold text-stone-800 transition hover:bg-stone-100 cursor-pointer"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white overflow-hidden">
-                    {session.user.image ? (
+                    {user.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={session.user.image}
-                        alt={session.user.name || "User"}
+                        src={user.image}
+                        alt={user.name || "User"}
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      session.user.name?.slice(0, 1).toUpperCase() || "U"
+                      user.name?.slice(0, 1).toUpperCase() || "U"
                     )}
                   </span>
                   <span className="max-w-[100px] truncate sm:max-w-none">
-                    {session.user.name}
+                    {user.name}
                   </span>
                   <ChevronDown size={14} className="text-stone-500" />
                 </button>
@@ -109,10 +125,10 @@ export default function Navbar({
                   <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-stone-200 bg-white py-2 shadow-lg z-50">
                     <div className="border-b border-stone-100 px-4 py-2">
                       <p className="truncate text-xs font-bold text-stone-900">
-                        {session.user.name}
+                        {user.name}
                       </p>
                       <p className="truncate text-[11px] text-stone-500">
-                        {session.user.email}
+                        {user.email}
                       </p>
                     </div>
 
@@ -140,14 +156,14 @@ export default function Navbar({
               <>
                 <Link
                   href="/signin"
-                  className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 sm:inline-flex"
+                  className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-stone-700 transition hover:bg-stone-100 sm:px-3 sm:py-2"
                 >
                   সাইন ইন
                 </Link>
 
                 <Link
                   href="/signup"
-                  className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 sm:px-4"
+                  className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-emerald-800 sm:px-4 sm:py-2.5"
                 >
                   সাইন আপ
                 </Link>

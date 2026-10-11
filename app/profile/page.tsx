@@ -19,9 +19,11 @@ function getCategoryLabel(category: Category) {
 }
 
 export default async function ProfilePage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api
+    .getSession({
+      headers: await headers(),
+    })
+    .catch(() => null);
 
   if (!session?.user) {
     redirect("/signin?callbackUrl=/profile");
@@ -46,7 +48,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#fafafa]">
-      <Navbar categories={navbarCategories} />
+      <Navbar categories={navbarCategories} initialSession={session} />
 
       {products.length > 0 && <PriceTicker products={products} />}
 

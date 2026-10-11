@@ -26,9 +26,10 @@ export default function RootLayout({
   return (
     <html
       lang="bn"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
         <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
         {children}
       </body>

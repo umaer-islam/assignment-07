@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import PriceTicker from "@/components/PriceTicker";
 import CategoryBrowser from "@/components/CategoryBrowser";
 import Footer from "@/components/Footer";
+import { auth } from "@/lib/auth";
 
 import {
   getCategories,
@@ -45,12 +47,29 @@ export async function generateMetadata({
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
 
-  const [categoryResult, productsResult, allCategoriesResult, allProductsResult] =
-    await Promise.allSettled([
-      getCategoryBySlug(slug),
-      getProductsByCategory(slug),
-      getCategories(),
-      getProducts(),
+  const [session, categoryResult, productsResult, allCategoriesResult, allProductsResult] =
+    await Promise.all([
+      auth.api
+        .getSession({
+          headers: await headers(),
+        })
+        .catch(() => null),
+      getCategoryBySlug(slug).then(
+        (v) => ({ status: "fulfilled" as const, value: v }),
+        (e) => ({ status: "rejected" as const, reason: e })
+      ),
+      getProductsByCategory(slug).then(
+        (v) => ({ status: "fulfilled" as const, value: v }),
+        (e) => ({ status: "rejected" as const, reason: e })
+      ),
+      getCategories().then(
+        (v) => ({ status: "fulfilled" as const, value: v }),
+        (e) => ({ status: "rejected" as const, reason: e })
+      ),
+      getProducts().then(
+        (v) => ({ status: "fulfilled" as const, value: v }),
+        (e) => ({ status: "rejected" as const, reason: e })
+      ),
     ]);
 
   const category: Category | null =
@@ -79,7 +98,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f4f7f4]">
-      <Navbar categories={navbarCategories} />
+      <Navbar categories={navbarCategories} initialSession={session} />
 
       {allProducts.length > 0 && <PriceTicker products={allProducts} />}
 

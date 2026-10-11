@@ -1,9 +1,12 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import PriceTicker from "@/components/PriceTicker";
 import Footer from "@/components/Footer";
 import SignUpForm from "@/components/SignUpForm";
+import { auth } from "@/lib/auth";
 import { getCategories, getProducts } from "@/lib/bazar-dor-api";
 import type { Category, Product } from "@/types/bazar-dor";
 
@@ -17,6 +20,15 @@ function getCategoryLabel(category: Category) {
 }
 
 export default async function SignUpPage() {
+  const session = await auth.api
+    .getSession({
+      headers: await headers(),
+    })
+    .catch(() => null);
+
+  if (session?.user) {
+    redirect("/profile");
+  }
   const [productsResult, categoriesResult] = await Promise.allSettled([
     getProducts(),
     getCategories(),

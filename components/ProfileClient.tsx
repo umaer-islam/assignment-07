@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { authClient, signOut } from "@/lib/auth-client";
+import { Edit3, Mail, User as UserIcon } from "lucide-react";
+import { signOut } from "@/lib/auth-client";
 
 interface ProfileClientProps {
   user: {
@@ -16,8 +17,6 @@ interface ProfileClientProps {
 
 export default function ProfileClient({ user }: ProfileClientProps) {
   const router = useRouter();
-  const [name, setName] = useState(user.name || "");
-  const [loading, setLoading] = useState(false);
 
   async function handleSignOut() {
     try {
@@ -30,33 +29,6 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     }
   }
 
-  async function handleUpdateName(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!name.trim()) {
-      toast.error("নাম খালি রাখা যাবে না।");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await authClient.updateUser({
-        name: name.trim(),
-      });
-
-      if (error) {
-        toast.error(error.message || "নাম আপডেট করতে সমস্যা হয়েছে।");
-      } else {
-        toast.success("নাম সফলভাবে আপডেট করা হয়েছে!");
-        router.refresh();
-      }
-    } catch {
-      toast.error("নাম আপডেট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="w-full">
       {/* Page Title & Subtitle */}
@@ -65,12 +37,12 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           আমার প্রোফাইল
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-stone-500">
-          আপনার অ্যাকাউন্টের তথ্য এখানে দেখুন।
+          আপনার অ্যাকাউন্টের বিবরণ ও ব্যক্তিগত তথ্য এখানে দেখতে পাবেন।
         </p>
       </div>
 
       {/* Card 1: User Overview with Sign Out */}
-      <div className="bg-white rounded-2xl border border-stone-200/90 p-5 sm:p-6 shadow-xs flex items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-stone-200/90 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 bg-stone-100 border border-stone-200/80 flex items-center justify-center">
             {user.image ? (
@@ -99,46 +71,51 @@ export default function ProfileClient({ user }: ProfileClientProps) {
         <button
           type="button"
           onClick={handleSignOut}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl border border-rose-300 hover:border-rose-400 bg-white hover:bg-rose-50/60 text-rose-600 text-xs sm:text-sm font-medium transition cursor-pointer shadow-2xs"
+          className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl border border-rose-300 hover:border-rose-400 bg-white hover:bg-rose-50/60 text-rose-600 text-xs sm:text-sm font-medium transition cursor-pointer shadow-2xs"
         >
           <span className="text-rose-500 font-bold">←</span>
           <span>সাইন আউট</span>
         </button>
       </div>
 
-      {/* Card 2: Information & Name Update Form */}
+      {/* Card 2: Account Details & Update Action (C3 requirement) */}
       <div className="mt-5 bg-white rounded-2xl border border-stone-200/90 p-5 sm:p-6 shadow-xs">
-        <h3 className="text-sm sm:text-base font-bold text-stone-900 mb-4">
-          তথ্য
-        </h3>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="text-sm sm:text-base font-bold text-stone-900">
+            ব্যক্তিগত তথ্য
+          </h3>
 
-        <form onSubmit={handleUpdateName} className="space-y-4">
-          <div>
-            <label
-              htmlFor="profile-name-input"
-              className="block text-xs font-semibold text-stone-700 mb-2"
-            >
-              নাম
-            </label>
-            <input
-              id="profile-name-input"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="আপনার নাম লিখুন"
-              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-            />
+          {/* C3: Update button navigating to /profile/update */}
+          <Link
+            href="/profile/update"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition shadow-2xs cursor-pointer"
+          >
+            <Edit3 size={13} />
+            <span>তথ্য আপডেট করুন</span>
+          </Link>
+        </div>
+
+        <div className="space-y-3.5">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50/80 border border-stone-200/60">
+            <UserIcon size={16} className="text-stone-400 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-stone-400">নাম</p>
+              <p className="text-xs sm:text-sm font-semibold text-stone-800 truncate">
+                {user.name}
+              </p>
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs sm:text-sm transition-colors shadow-2xs mt-2 cursor-pointer disabled:opacity-60"
-          >
-            {loading ? "আপডেট হচ্ছে..." : "আপডেট"}
-          </button>
-        </form>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50/80 border border-stone-200/60">
+            <Mail size={16} className="text-stone-400 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-stone-400">ইমেইল</p>
+              <p className="text-xs sm:text-sm font-semibold text-stone-800 truncate">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

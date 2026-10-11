@@ -1,8 +1,9 @@
+import { headers } from "next/headers";
 import Navbar from "@/components/Navbar";
 import PriceTicker from "@/components/PriceTicker";
 import ProductBrowser from "@/components/ProductBrowser";
 import Footer from "@/components/Footer";
-
+import { auth } from "@/lib/auth";
 import { getCategories, getProducts } from "@/lib/bazar-dor-api";
 import type { Category, Product } from "@/types/bazar-dor";
 
@@ -11,10 +12,20 @@ function getCategoryLabel(category: Category) {
 }
 
 export default async function HomePage() {
-
-  const [productsResult, categoriesResult] = await Promise.allSettled([
-    getProducts(),
-    getCategories(),
+  const [session, productsResult, categoriesResult] = await Promise.all([
+    auth.api
+      .getSession({
+        headers: await headers(),
+      })
+      .catch(() => null),
+    getProducts().then(
+      (v) => ({ status: "fulfilled" as const, value: v }),
+      (e) => ({ status: "rejected" as const, reason: e })
+    ),
+    getCategories().then(
+      (v) => ({ status: "fulfilled" as const, value: v }),
+      (e) => ({ status: "rejected" as const, reason: e })
+    ),
   ]);
 
   const products: Product[] =
@@ -37,7 +48,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f9faf9]">
-      <Navbar categories={navbarCategories} />
+      <Navbar categories={navbarCategories} initialSession={session} />
 
       {products.length > 0 && <PriceTicker products={products} />}
 

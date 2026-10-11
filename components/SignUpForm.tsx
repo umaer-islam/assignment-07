@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
@@ -42,17 +42,55 @@ function GitHubIcon({ className }: { className?: string }) {
 }
 
 export default function SignUpForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<"google" | "github" | null>(null);
 
-  function handleDisabledSubmit(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    toast("ইমেইল ও পাসওয়ার্ড সাইন আপ সাময়িকভাবে স্থগিত রয়েছে। দয়া করে Google বা GitHub ব্যবহার করুন।", {
-      icon: "ℹ️",
-      duration: 4000,
-    });
+
+    if (!name.trim() || !email.trim() || !password) {
+      toast.error("সবগুলো প্রয়োজনীয় তথ্য পূরণ করুন।");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("পাসওয়ার্ড দুটি মিলছে না।");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authClient.signUp.email({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      if (res?.error) {
+        toast.error(res.error.message || "অ্যাকাউন্ট তৈরি করা যায়নি।");
+      } else {
+        toast.success("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! অনুগ্রহ করে লগইন করুন।");
+        // Requirement: Navigate user to login page on successful registration
+        router.push("/signin");
+      }
+    } catch {
+      toast.error("সাইন আপ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSocialLogin(provider: "google" | "github") {
@@ -61,16 +99,17 @@ export default function SignUpForm() {
       await authClient.signIn.social({
         provider,
         callbackURL: callbackUrl || "/",
-        errorCallbackURL: "/signin",
+        errorCallbackURL: "/signup",
       });
     } catch {
       toast.error(
         `দুঃখিত, ${provider === "google" ? "Google" : "GitHub"} লগইন শুরু করা যায়নি। আবার চেষ্টা করুন।`
       );
-    } finally {
       setSocialLoading(null);
     }
   }
+
+  const isSubmitting = loading || socialLoading !== null;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -84,9 +123,9 @@ export default function SignUpForm() {
         </p>
       </div>
 
-      {/* Card matching Figma */}
+      {/* Card */}
       <div className="bg-white rounded-2xl border border-stone-200/90 p-6 sm:p-7 shadow-xs">
-        <form onSubmit={handleDisabledSubmit} className="space-y-4">
+        <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label
               htmlFor="signup-name"
@@ -97,9 +136,12 @@ export default function SignUpForm() {
             <input
               id="signup-name"
               type="text"
-              disabled
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="যেমন: রহিম উদ্দিন"
-              className="w-full rounded-xl border border-stone-200 bg-stone-50/60 px-3.5 py-2.5 text-xs sm:text-sm text-stone-700 placeholder:text-stone-400 cursor-not-allowed focus:outline-none"
+              disabled={isSubmitting}
+              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 disabled:bg-stone-50 disabled:text-stone-400"
             />
           </div>
 
@@ -113,9 +155,12 @@ export default function SignUpForm() {
             <input
               id="signup-email"
               type="email"
-              disabled
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-xl border border-stone-200 bg-stone-50/60 px-3.5 py-2.5 text-xs sm:text-sm text-stone-700 placeholder:text-stone-400 cursor-not-allowed focus:outline-none"
+              disabled={isSubmitting}
+              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 disabled:bg-stone-50 disabled:text-stone-400"
             />
           </div>
 
@@ -129,9 +174,12 @@ export default function SignUpForm() {
             <input
               id="signup-password"
               type="password"
-              disabled
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="কমপক্ষে ৮ অক্ষর"
-              className="w-full rounded-xl border border-stone-200 bg-stone-50/60 px-3.5 py-2.5 text-xs sm:text-sm text-stone-700 placeholder:text-stone-400 cursor-not-allowed focus:outline-none"
+              disabled={isSubmitting}
+              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 disabled:bg-stone-50 disabled:text-stone-400"
             />
           </div>
 
@@ -145,17 +193,21 @@ export default function SignUpForm() {
             <input
               id="signup-password-confirm"
               type="password"
-              disabled
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="আবার লিখুন"
-              className="w-full rounded-xl border border-stone-200 bg-stone-50/60 px-3.5 py-2.5 text-xs sm:text-sm text-stone-700 placeholder:text-stone-400 cursor-not-allowed focus:outline-none"
+              disabled={isSubmitting}
+              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 disabled:bg-stone-50 disabled:text-stone-400"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs sm:text-sm transition-colors shadow-2xs mt-2 cursor-pointer"
+            disabled={isSubmitting}
+            className="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs sm:text-sm transition-colors shadow-2xs mt-2 cursor-pointer disabled:opacity-60"
           >
-            অ্যাকাউন্ট তৈরি করুন
+            {loading ? "অ্যাকাউন্ট তৈরি হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}
           </button>
         </form>
 
@@ -170,11 +222,11 @@ export default function SignUpForm() {
         </div>
 
         {/* Social Buttons */}
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => handleSocialLogin("google")}
-            disabled={socialLoading !== null}
+            disabled={isSubmitting}
             className="flex items-center justify-center gap-1.5 w-full py-2.5 px-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-[11px] sm:text-xs font-medium text-stone-700 transition shadow-2xs cursor-pointer disabled:opacity-60"
           >
             <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
@@ -186,7 +238,7 @@ export default function SignUpForm() {
           <button
             type="button"
             onClick={() => handleSocialLogin("github")}
-            disabled={socialLoading !== null}
+            disabled={isSubmitting}
             className="flex items-center justify-center gap-1.5 w-full py-2.5 px-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-[11px] sm:text-xs font-medium text-stone-700 transition shadow-2xs cursor-pointer disabled:opacity-60"
           >
             <GitHubIcon className="w-3.5 h-3.5 shrink-0" />
